@@ -1,0 +1,6 @@
+from mr_provisioner import create_app
+
+import os
+
+app = create_app(config_path=os.getenv("APP_CONFIG", "{{mr_provisioner_config}}"))
+app.secret_key = "{{mr_provisioner_app_secret}}"

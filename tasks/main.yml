@@ -1,0 +1,124 @@
+---
+- name: Install dependencies for running mr-provisioner
+  apt:
+    state: present
+    name: "{{item}}"
+  with_items:
+    - "{{mr_provisioner_package_deps}}"
+
+- name: Create required directories
+  file:
+    path: "{{item}}"
+    state: directory
+  with_items:
+    - "{{mr_provisioner_build_path}}"
+    - "{{mr_provisioner_path}}/bin"
+    - "{{mr_provisioner_tftp_root}}"
+    - "{{mr_provisioner_path}}/logs"
+
+- name: Fetch extra dependencies for mr-provisioner
+  get_url:
+    url: "{{item}}"
+    dest: "{{mr_provisioner_path}}/bin"
+    mode: "0755"
+  with_items:
+    - "{{mr_provisioner_ws_subprocess_source}}"
+    - "{{mr_provisioner_tftp_http_proxy_source}}"
+
+- name: Fetch mr-provisioner sources.
+  unarchive:
+    src: "{{item}}"
+    dest: "{{mr_provisioner_build_path}}"
+    remote_src: yes
+  with_items:
+    - "{{mr_provisioner_source}}"
+  when: not mr_provisioner_fetch_git
+
+- name: Fetch mr-provisioner sources via git.
+  include_tasks: git_fetch_setup.yml
+  vars:
+          mrp_git: "{{ mr_provisioner_git }}"
+          mrp_build_path: "{{ mr_provisioner_build_path }}/mr-provisioner-{{mr_provisioner_version}}/git"
+          mrp_dist_path: "{{mr_provisioner_build_path}}"
+          mrp_git_branch: "{{ mr_provisioner_git_branch | default('master') }}"
+          mrp_version: "{{mr_provisioner_version}}" 
+  when: mr_provisioner_fetch_git
+
+- name: Create mr-provisioner virtualenv
+  pip:
+    requirements: "{{mr_provisioner_build_path}}/mr-provisioner-{{mr_provisioner_version}}/requirements.txt"
+    virtualenv: "{{mr_provisioner_venv_path|default('{{mr_provisioner_path}}/venv')}}"
+    virtualenv_python: python3.5
+
+- name: Run mr-provisioner setup.py install
+  shell: "cd {{mr_provisioner_build_path}}/mr-provisioner-{{mr_provisioner_version}} && {{mr_provisioner_venv_path}}/bin/python setup.py install"
+
+- name: Workaround for https://github.com/Linaro/mr-provisioner/issues/71
+  shell: echo "{{mr_provisioner_version}}" > "{{mr_provisioner_venv_path}}/lib/python3.5/site-packages/mr_provisioner-{{mr_provisioner_version}}-py3.5.egg/VERSION"
+
+- name: Create PostgreSQL database
+  become_user: postgres
+  postgresql_db:
+     name: "{{mr_provisioner_db_name|default('provisioner')}}"
+
+- name: Create the PostgreSQL role
+  become_user: postgres
+  postgresql_user:
+    db: provisioner
+    user: "{{mr_provisioner_db_user|default('provisioner')}}"
+    password: "{{mr_provisioner_db_pass|default('provisioner')}}"
+
+- name: Generate configuration files for mr-provisioner
+  template:
+    src: templates/config.ini.j2
+    dest: "{{mr_provisioner_config}}"
+
+- name: Copy the bootloader files
+  copy:
+    src: "{{lookup('fileglob', '{{role_path}}/files/*.efi')}}"
+    dest: "{{mr_provisioner_tftp_root}}"
+
+- name: Run db upgrade steps
+  shell: "{{mr_provisioner_venv_path}}/bin/mr-provisioner -c {{mr_provisioner_config}} db upgrade -d {{mr_provisioner_build_path}}/mr-provisioner-{{mr_provisioner_version}}/migrations"
+  register: db_upgrade
+  failed_when: (db_upgrade.rc != 0)
+
+- name: Install gunicorn webserver
+  pip:
+    name: "gunicorn"
+    virtualenv: "{{mr_provisioner_venv_path|default('{{mr_provisioner_path}}/venv')}}"
+
+- name: Generate configuraton files for gunicorn
+  template:
+    src: "templates/{{item}}.j2"
+    dest: "{{mr_provisioner_path}}/{{item}}"
+  with_items:
+    - gunicorn_settings.py
+    - run_provisioner.py
+
+- name: Install the mr-provisioner services
+  template:
+    src: "{{item}}.service.j2"
+    dest: "/etc/systemd/system/{{item}}.service"
+  with_items:
+    - "{{mr_provisioner_services}}"
+
+- name: Install bootstrap-provisioner script
+  template:
+    src: "templates/{{item}}.j2"
+    dest: "{{mr_provisioner_path}}/{{item}}"
+  with_items:
+    - bootstrap-provisioner.py
+
+- name: Create mr-provisioner BMCs and Networks
+  shell: "{{mr_provisioner_venv_path}}/bin/python {{mr_provisioner_path}}/bootstrap-provisioner.py"
+  ignore_errors: yes
+
+- name: Start and enable the mrp services
+  systemd:
+    state: restarted
+    name: "{{item}}"
+    daemon_reload: yes
+    enabled: yes
+  with_items:
+    - "{{mr_provisioner_services}}"

@@ -1,0 +1,13 @@
+[Unit]
+Description=tftp-http-proxy for mr-provisioner
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart={{mr_provisioner_path}}/bin/tftp-http-proxy \
+	-http-base-url 'http://{{mr_provisioner_public_addr}}:{{mr_provisioner_public_port}}/tftp/' -log-path '{{mr_provisioner_path}}/logs/tftp-http-proxy.log' -tftp-bind-address '{{mr_provisioner_public_addr}}:69'
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

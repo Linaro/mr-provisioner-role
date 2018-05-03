@@ -1,0 +1,5 @@
+import multiprocessing
+
+bind = "0.0.0.0:{{mr_provisioner_public_port}}"
+workers = {{gunicorn_workers|default('multiprocessing.cpu_count() * 2 + 1')}}
+timeout = {{gunicorn_timeout|default('300')}}

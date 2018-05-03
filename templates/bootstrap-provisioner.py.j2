@@ -1,0 +1,40 @@
+#jinja2: trim_blocks: False, lstrip_blocks: False
+#!/usr/bin/env python3
+
+from run_provisioner import app
+from mr_provisioner import db
+from mr_provisioner.models import User, Network, BMC
+
+
+def main():
+
+    with app.app_context():
+        {% for network in mr_provisioner_networks %}
+        kwargs = { 'name': "{{network.name}}", 'subnet': "{{network.subnet}}"}
+        {% if network.static_net not in ('None', '', False, None) %}
+        kwargs.update({'static_net': "{{network.static_net}}"})
+        {% endif %}
+        {% if network.reserved_net not in ('None', '', False, None) %}
+        kwargs.update({'reserved_net': "{{network.reserved_net}}"})
+        {% endif %}
+        network = Network(**kwargs)
+        try:
+            db.session.add(network)
+            db.session.commit()
+        except:
+            pass
+        {% endfor %}
+	{% if mr_provisioner_bmcs is not none %}
+        {% for bmc in mr_provisioner_bmcs %}
+        bmc = BMC(name="{{bmc.name}}", ip="{{bmc.ip}}", privilege_level="{{bmc.privilege_level}}", bmc_type="{{bmc_type|default('plain')}}",
+                  username="{{bmc.username}}", password="{{bmc.password}}")
+        try:
+            db.session.add(bmc)
+            db.session.commit()
+        except:
+            pass
+	{% endfor %}
+	{% endif %}
+
+if __name__ == "__main__":
+    main()

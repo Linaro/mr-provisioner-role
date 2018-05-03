@@ -1,0 +1,31 @@
+---
+- name: Install git, curl on MrP machine
+  apt:
+          name: "{{ item }}"
+          state: present
+  with_items:
+          - git
+          - curl
+
+- name: Run nodejs setup script
+  shell: "curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -"
+
+- name: Install nodejs
+  apt:
+          name: nodejs
+          state: present
+
+- name: Fetch the sources from a MrP repo
+  git:
+          repo: "{{ mrp_git }}"
+          dest: "{{ mrp_build_path }}"
+          version: "{{ mrp_git_branch }}"
+
+- name: Build dist
+  shell: "cd {{ mrp_build_path }} && make dist"
+
+- name: Fetch mr-provisioner sources.
+  unarchive:
+    src: "{{ mrp_build_path }}/dist/mr-provisioner-{{ mrp_version }}.tar.gz"
+    dest: "{{mrp_dist_path}}"
+    remote_src: yes

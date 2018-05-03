@@ -1,0 +1,16 @@
+[Unit]
+Description=mr-provisioner http backend
+Requires=network-online.target
+Requires=mr-provisioner-ws.service
+After=network-online.target
+
+[Service]
+# Override log level specified in config.ini
+Environment=APP_LOG_LEVEL=INFO
+ExecStart= {{mr_provisioner_venv_path}}/bin/gunicorn -c {{mr_provisioner_path}}/gunicorn_settings.py run_provisioner:app --chdir {{mr_provisioner_path}} --access-logfile {{mr_provisioner_path}}/logs/access.log --error-logfile={{mr_provisioner_path}}/logs/error.log
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

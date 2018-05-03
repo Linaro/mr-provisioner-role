@@ -1,0 +1,44 @@
+mr_provisioner_path: "/opt/mr-provisioner"
+mr_provisioner_build_path: "{{mr_provisioner_path}}/build"
+mr_provisioner_version: "0.2.8"
+mr_provisioner_fetch_git: False
+mr_provisioner_source: "https://github.com/Linaro/mr-provisioner/releases/download/v{{mr_provisioner_version}}/mr-provisioner-{{mr_provisioner_version}}.tar.gz"
+mr_provisioner_ws_subprocess_version: "0.1"
+mr_provisioner_ws_subprocess_source: "https://github.com/bwalex/ws-subprocess/releases/download/v{{mr_provisioner_ws_subprocess_version}}/ws-subprocess"
+mr_provisioner_tftp_http_proxy_version: "0.3"
+mr_provisioner_tftp_http_proxy_source: "https://github.com/niedbalski/tftp-http-proxy/releases/download/v{{mr_provisioner_tftp_http_proxy_version}}/tftp-http-proxy"
+mr_provisioner_kea_plugin_version: "0.1"
+mr_provisioner_venv_path: "{{mr_provisioner_path}}/venv"
+mr_provisioner_config: "/etc/mr-provisioner.ini"
+mr_provisioner_banner: "test provisioner"
+mr_provisioner_default_bootfile: "mlab-grubaa64.efi"
+mr_provisioner_tftp_root: "/var/lib/mr-provisioner/tftp"
+mr_provisioner_log_level: "DEBUG"
+mr_provisioner_db_name: "provisioner"
+mr_provisioner_db_user: "provisioner"
+mr_provisioner_db_pass: "provisioner"
+mr_provisioner_public_iface: "" #access url
+mr_provisioner_bmc_iface: "" #used for tftp proxy
+mr_provisioner_public_port: "5000"
+mr_provisioner_services:
+  - mr-provisioner
+  - mr-provisioner-ws
+  - mr-provisioner-tftp
+mr_provisioner_app_secret: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters') }}"
+mr_provisioner_bmcs: []
+mr_provisioner_networks: []
+mr_provisioner_public_addr: "{{ hostvars[inventory_hostname]['ansible_' + mr_provisioner_public_iface]['ipv4']['address'] }}"
+mr_provisioner_bmc_addr: "{{ hostvars[inventory_hostname]['ansible_' + mr_provisioner_bmc_iface]['ipv4']['address'] }}"
+mr_provisioner_package_deps:
+  - sudo
+  - ipmitool
+  - python3
+  - python3-pip
+  - postgresql
+  - libpq-dev
+  - build-essential
+  - libssl-dev
+  - python3-virtualenv
+  - python-virtualenv
+  - python-psycopg2
+mr_provisioner_ipmitool_path: "/usr/bin/ipmitool"

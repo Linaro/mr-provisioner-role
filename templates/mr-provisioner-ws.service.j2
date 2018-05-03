@@ -1,0 +1,15 @@
+[Unit]
+Description=ws-subprocess for mr-provisioner
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart={{mr_provisioner_path}}/bin/ws-subprocess \
+	-controller-url "http://{{mr_provisioner_public_addr}}:{{mr_provisioner_public_port}}/admin/ws-subprocess" \
+	-listen "0.0.0.0:8866"
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
