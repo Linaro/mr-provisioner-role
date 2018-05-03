@@ -32,7 +32,18 @@
     remote_src: yes
   with_items:
     - "{{mr_provisioner_source}}"
+  when: not mr_provisioner_fetch_git
 
+- name: Fetch mr-provisioner sources via git.
+  include_tasks: git_fetch_setup.yml
+  vars:
+          mrp_git: "{{ mr_provisioner_git }}"
+          mrp_build_path: "{{ mr_provisioner_build_path }}/mr-provisioner-{{mr_provisioner_version}}/git"
+          mrp_dist_path: "{{mr_provisioner_build_path}}"
+          mrp_git_branch: "{{ mr_provisioner_git_branch | default('master') }}"
+          mrp_version: "{{mr_provisioner_version}}" 
+  when: mr_provisioner_fetch_git
+  
 - name: Create mr-provisioner virtualenv
   pip:
     requirements: "{{mr_provisioner_build_path}}/mr-provisioner-{{mr_provisioner_version}}/requirements.txt"

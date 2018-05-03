@@ -1,6 +1,7 @@
 mr_provisioner_path: "/opt/mr-provisioner"
 mr_provisioner_build_path: "{{mr_provisioner_path}}/build"
 mr_provisioner_version: "0.2.8"
+mr_provisioner_fetch_git: False
 mr_provisioner_source: "https://github.com/Linaro/mr-provisioner/releases/download/v{{mr_provisioner_version}}/mr-provisioner-{{mr_provisioner_version}}.tar.gz"
 mr_provisioner_ws_subprocess_version: "0.1"
 mr_provisioner_ws_subprocess_source: "https://github.com/bwalex/ws-subprocess/releases/download/v{{mr_provisioner_ws_subprocess_version}}/ws-subprocess"
