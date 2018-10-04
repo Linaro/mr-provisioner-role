@@ -41,4 +41,5 @@ mr_provisioner_package_deps:
   - python3-virtualenv
   - python-virtualenv
   - python-psycopg2
+  - python-setuptools
 mr_provisioner_ipmitool_path: "/usr/bin/ipmitool"
